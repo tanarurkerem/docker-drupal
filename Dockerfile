@@ -1,77 +1,21 @@
-# This file is a quick copy from the official docker image of drupal
-# Source: https://github.com/docker-library/drupal/blob/2a23b1f942e665bd6af361997c96397601d1b3ed/8.8/apache/Dockerfile
-
-# from https://www.drupal.org/docs/8/system-requirements/drupal-8-php-requirements
-FROM php:7.3-apache-stretch
-# TODO switch to buster once https://github.com/docker-library/php/issues/865 is resolved in a clean way (either in the PHP image or in PHP itself)
-
-# install the PHP extensions we need
-RUN set -eux; \
-	\
-	if command -v a2enmod; then \
-		a2enmod rewrite; \
-	fi; \
-	\
-	savedAptMark="$(apt-mark showmanual)"; \
-	\
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-		libfreetype6-dev \
-		libjpeg-dev \
-		libpng-dev \
-		libpq-dev \
-		libzip-dev \
-	; \
-	\
-	docker-php-ext-configure gd \
-		--with-freetype-dir=/usr \
-		--with-jpeg-dir=/usr \
-		--with-png-dir=/usr \
-	; \
-	\
-	docker-php-ext-install -j "$(nproc)" \
-		gd \
-		opcache \
-		pdo_mysql \
-		pdo_pgsql \
-		zip \
-	; \
-	\
-# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark; \
-	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-		| awk '/=>/ { print $3 }' \
-		| sort -u \
-		| xargs -r dpkg-query -S \
-		| cut -d: -f1 \
-		| sort -u \
-		| xargs -rt apt-mark manual; \
-	\
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*
-
-# set recommended PHP.ini settings
-# see https://secure.php.net/manual/en/opcache.installation.php
-RUN { \
-		echo 'opcache.memory_consumption=128'; \
-		echo 'opcache.interned_strings_buffer=8'; \
-		echo 'opcache.max_accelerated_files=4000'; \
-		echo 'opcache.revalidate_freq=60'; \
-		echo 'opcache.fast_shutdown=1'; \
-	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
-
-WORKDIR /var/www/html
-
-# https://www.drupal.org/node/3060/release
-ENV DRUPAL_VERSION 9.0.0-alpha1
-ENV DRUPAL_MD5 d6966108add1d681774406209981fb77
-
-RUN set -eux; \
-	curl -fSL "https://ftp.drupal.org/files/projects/drupal-${DRUPAL_VERSION}.tar.gz" -o drupal.tar.gz; \
-	echo "${DRUPAL_MD5} *drupal.tar.gz" | md5sum -c -; \
-	tar -xz --strip-components=1 -f drupal.tar.gz; \
-	rm drupal.tar.gz; \
-	chown -R www-data:www-data sites modules themes
-
-# vim:set ft=dockerfile:
+FROM php:7.4-apache-buster
+WORKDIR /tmp
+COPY install-dependencies.sh ./install-dependencies.sh
+RUN ./install-dependencies.sh
+COPY opcache-recommended.ini /usr/local/etc/php/conf.d/opcache-recommended.ini
+ENV COMPOSER_ALLOW_SUPERUSER 1
+RUN mkdir /composer
+ENV COMPOSER_HOME /composer
+COPY install-composer.sh ./install-composer.sh
+RUN ./install-composer.sh
+RUN composer global require drush/drush
+RUN composer create-project drupal/recommended-project /tmp/drupal && rm -rf /tmp/drupal
+WORKDIR /drupal
+RUN mkdir /drupal-files && chown www-data /drupal-files
+COPY settings.php /templates/settings.php
+RUN rm -rf /var/www/html 
+RUN ln -s /drupal/web /var/www/html
+COPY docker-drupal-entrypoint /usr/local/bin/docker-drupal-entrypoint
+ENV PATH /composer/vendor/bin:$PATH
+CMD ["apache2-foreground"]
+ENTRYPOINT ["docker-drupal-entrypoint"]

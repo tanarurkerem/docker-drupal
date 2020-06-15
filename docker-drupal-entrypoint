@@ -1,0 +1,39 @@
+#!/bin/sh
+set -e
+
+echo "Run entrypoint"
+
+if [ "$(ls -A /drupal)" ]; then
+    if [ -f "/drupal/composer.json" ]; then
+        if [ ! -d "/drupal/vendor" ]; then
+            echo "Install dependencies"
+            composer install
+        fi
+    fi
+    STATE=$(drush status --fields=bootstrap --format=string)
+    if [ "$STATE" = "" ]
+    then
+        echo "Install site"
+        drush si --yes
+        chown -R www-data:www-data web/sites/default/files
+        if [ "$(ls -A /drupal/config)" ]; then
+            echo "Import configurations"
+            drush config-get system.site uuid
+            UUID=$(cat /drupal/config/system.site.yml | grep uuid | tail -c +7 | head -c 36)
+            drush config-set -y system.site uuid "$UUID"
+            drush entity:delete shortcut_set
+            drush cim --yes
+        fi
+    fi
+else
+    echo "Install Drupal"
+    composer create-project drupal/recommended-project /drupal
+    mkdir web/sites/default/files
+    chown www-data.www-data web/sites/default/files/
+    cp /templates/settings.php web/sites/default/settings.php
+    chown www-data web/sites/default
+    mkdir /drupal/config 
+    chown www-data /drupal/config
+fi
+
+exec "$@"

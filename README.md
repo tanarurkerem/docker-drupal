@@ -1,7 +1,15 @@
 # docker-drupal
-Woluld you like to try Drupal 9? Use this two simple command for it:
+
+This version of image is for only development purpose
+
+Woluld you like to try Drupal 9? Use this one simple command for it:
 
 ```
   docker run --name drupal -d --rm -p 80:80 tanarurkerem/drupal
-  docker exec -it -u www-data drupal php core/scripts/drupal install demo_umami
+```
+
+If you would like to login into a site run the following command for one time login link:
+
+```
+  docker exec -it drupal drush uli
 ```
