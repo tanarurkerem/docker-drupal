@@ -1,22 +1,29 @@
 #!/bin/sh
-set -e
+set -eux
 
 echo "Run entrypoint"
 
 if [ "$(ls -A /drupal)" ]; then
+# /drupal directory is not empty
     if [ -f "/drupal/composer.json" ]; then
         if [ ! -d "/drupal/vendor" ]; then
+        # There was composer.json and vendor directory not exists
             echo "Install dependencies"
             composer install
         fi
     fi
+    if [ ! -f "/drupal/vendor/bin/drush" ]; then
+    #install drush if it does not exist
+        composer require drush/drush
+    fi
     STATE=$(drush status --fields=bootstrap --format=string)
-    if [ "$STATE" = "" ]
-    then
+    if [ "$STATE" = "" ]; then
+    # Drupal not installed
         echo "Install site"
         drush si --yes
-        chown -R www-data:www-data web/sites/default/files
-        if [ "$(ls -A /drupal/config)" ]; then
+        chown -R www-data:www-data web/sites/default
+        if [ -f "/drupal/config/system.site.yml" ]; then
+        # Import configuration if exists
             echo "Import configurations"
             drush config-get system.site uuid
             UUID=$(cat /drupal/config/system.site.yml | grep uuid | tail -c +7 | head -c 36)
@@ -27,13 +34,15 @@ if [ "$(ls -A /drupal)" ]; then
     fi
 else
     echo "Install Drupal"
-    composer create-project drupal/recommended-project /drupal
-    mkdir web/sites/default/files
-    chown www-data.www-data web/sites/default/files/
-    cp /templates/settings.php web/sites/default/settings.php
-    chown www-data web/sites/default
-    mkdir /drupal/config 
-    chown www-data /drupal/config
+    composer create-project drupal/recommended-project:$DRUPAL_VERSION /drupal
+    composer require drush/drush
+    mkdir /drupal/web/sites/default/files #Public files 
+    mkdir /drupal/files                   #Private files
+    mkdir /drupal/config                  #Configurations 
+    cp -R /templates/* .
+    chown -R www-data:www-data /drupal/web/sites/default
+    chown -R www-data:www-data /drupal/files
+    chown -R www-data:www-data /drupal/config
 fi
 
 exec "$@"

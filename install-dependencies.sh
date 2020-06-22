@@ -1,13 +1,11 @@
-set -eux; 
+#!/bin/sh
+set -eux
 	
 if command -v a2enmod; then 
     a2enmod rewrite 
 fi 
 
 savedAptMark="$(apt-mark showmanual)" 
-
-apt-get update 
-apt-get install -y --no-install-recommends libfreetype6-dev libjpeg-dev libpng-dev libpq-dev libzip-dev git unzip zip openssh-client
 
 docker-php-ext-configure gd --with-freetype --with-jpeg  
 
