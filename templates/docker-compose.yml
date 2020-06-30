@@ -1,0 +1,6 @@
+version: "2.4"
+services:
+  web:
+    image: tanarurkerem/drupal:8.9
+    volumes:
+      - .:/drupal
