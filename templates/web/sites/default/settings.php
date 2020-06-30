@@ -20,3 +20,11 @@ $databases['default']['default'] = array (
     'prefix' => getenv('DRUPAL_PREFIX', true) ?: '',
 );
 $config['system.logging']['error_level'] = 'verbose';
+$settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml';
+// opcache-t ki kell kapcsolni!!
+$settings['cache']['bins']['render'] = 'cache.backend.null';
+$settings['cache']['bins']['dynamic_page_cache'] = 'cache.backend.null';
+$settings['cache']['bins']['page'] = 'cache.backend.null';
+foreach (['bootstrap','config','data','default','discovery','discovery_migration','dynamic_page_cache','entity','jsonapi_memory','jsonapi_normalizations','jsonapi_resource_types','menu','migrate','page','render','rest','static','toolbar'] as $bin) {
+  $settings['cache']['bins'][$bin] = 'cache.backend.null';
+}
