@@ -35,7 +35,7 @@ if [ "$(ls -A /drupal)" ]; then
 else
     echo "Install Drupal"
     composer create-project drupal/recommended-project:$DRUPAL_VERSION /drupal
-    composer require --dev drupal/core-dev
+    composer require --dev drupal/core-dev:$DRUPAL_VERSION
     composer require drush/drush
     mkdir /drupal/web/sites/default/files #Public files 
     mkdir /drupal/files                   #Private files
@@ -44,6 +44,7 @@ else
     chown -R www-data:www-data /drupal/web/sites/default
     chown -R www-data:www-data /drupal/files
     chown -R www-data:www-data /drupal/config
+    #exit?
 fi
 
 exec "$@"
