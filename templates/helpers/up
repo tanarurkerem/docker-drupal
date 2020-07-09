@@ -1,0 +1,9 @@
+#!/bin/bash
+if [ "$1" == "all" ]
+then
+  docker-compose up -d
+  exit 0
+fi
+
+docker-compose up -d web
+echo "If you need Selenium for End to End tests, do not forget to run helpers/up all"

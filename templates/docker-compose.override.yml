@@ -2,5 +2,7 @@ version: "2.4"
 services:
   web:
     ports:
-#      - "80:80"
+      - "80:80"
 #      - "8080:80"
+#    environment:
+#      DRUSH_OPTIONS_URI: http://localhost/

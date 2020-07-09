@@ -4,3 +4,6 @@ services:
     image: tanarurkerem/drupal:8.9
     volumes:
       - .:/drupal
+  selenium:
+    image: selenium/standalone-chrome
+    shm_size: 2g
