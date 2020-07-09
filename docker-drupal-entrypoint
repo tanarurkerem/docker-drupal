@@ -44,7 +44,7 @@ else
     chown -R www-data:www-data /drupal/web/sites/default
     chown -R www-data:www-data /drupal/files
     chown -R www-data:www-data /drupal/config
-    #exit?
+    exit 0
 fi
 
 exec "$@"
