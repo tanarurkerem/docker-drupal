@@ -11,6 +11,7 @@ RUN apt-get update && \
     git \
     unzip \
     zip \
+    sqlite3 \
     openssh-client
 
 COPY install-dependencies.sh ./install-dependencies.sh
